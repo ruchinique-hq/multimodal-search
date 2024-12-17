@@ -1,5 +1,8 @@
+import os
 import torch
 import torchvision
+
+from math import ceil
 
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
@@ -12,7 +15,7 @@ class SearchService:
         self.processor = processor
 
     def generate_answer(self, search_answer_request: SearchAnswerRequest):
-        messages = self.generate_prompts(search_answer_request)
+        messages = self.generate_prompts_for_video(search_answer_request)
 
         text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
@@ -39,13 +42,15 @@ class SearchService:
 
         return output_text
 
-    @staticmethod
-    def generate_prompts(search_answer_request: SearchAnswerRequest):
+    def generate_prompts_for_video(self, search_answer_request: SearchAnswerRequest):
+
+        video_frames = self.get_frames()
+
         messages = [{
             "role": "user",
             "content": [{
                 "type": "video",
-                "video": f"file://./documents/data/sample.mp4",
+                "video": video_frames,
                 "max_pixels": 360 * 420,
                 "fps": 1.0
             }, {
@@ -55,3 +60,22 @@ class SearchService:
         }]
 
         return messages
+
+    @staticmethod
+    def get_frames(fraction=0.0125):
+        frames_path = "./documents/data/frames"
+        all_frames = sorted([f for f in os.listdir(frames_path) if f.endswith('.jpg')])
+
+        total_frames = len(all_frames)
+        frames_to_keep = ceil(total_frames * fraction)
+
+        # calculate the step size to evenly distribute the selected frames
+        step = total_frames // frames_to_keep
+
+        # select the frames
+        selected_frames = all_frames[::step][:frames_to_keep]
+
+        # create the full paths for the selected frames
+        frame_paths = [f"file://{os.path.join(frames_path, frame)}" for frame in selected_frames]
+
+        return frame_paths
