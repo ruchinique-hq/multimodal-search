@@ -14,7 +14,7 @@ class Container(containers.DeclarativeContainer):
     config = read_config()
 
     model_local_path = "./documents/qwen2-vl"
-    model = Qwen2VLForConditionalGeneration.from_pretrained(model_local_path, torch_dtype="auto", device_map="cpu")
+    model = Qwen2VLForConditionalGeneration.from_pretrained(model_local_path, torch_dtype="auto", device_map="auto")
     processor = AutoProcessor.from_pretrained(model_local_path)
 
     search_service = providers.Singleton(SearchService,model, processor)
