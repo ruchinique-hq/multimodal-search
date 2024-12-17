@@ -7,6 +7,8 @@ from services.search_service import SearchService
 from models.requests.search import SearchAnswerRequest
 from models.responses.answer import SearchAnswerResponse
 
+from logger import logger
+
 
 class SearchHandler(web.RequestHandler):
     search_service: SearchService
@@ -27,13 +29,18 @@ class SearchHandler(web.RequestHandler):
                 self.finish()
 
             search_answer_request = SearchAnswerRequest(body)
-            response: SearchAnswerResponse = self.search_service.generate_answer(search_answer_request)
+            logger.info(f"received a request to generate answer for query {search_answer_request.query}")
 
-            self.set_status(200)
-            self.write(json.dumps(response.to_json()))
+            response: SearchAnswerResponse = self.search_service.generate_answer(search_answer_request)
+            if response is None:
+                self.set_status(400)
+                self.write({'message': f'failed to generate answer for query {search_answer_request.query}'})
+            else:
+                self.set_status(200)
+                self.write(json.dumps(response.to_json()))
 
         except Exception as err:
             self.set_status(400)
-            self.write({'message': f'failed to get an answer for query {err.__str__()}'})
+            self.write({'message': f'failed to generate answer for query {search_answer_request.query} {err.__str__()}'})
         finally:
             self.finish()
