@@ -5,6 +5,7 @@ from dependency_injector.wiring import inject
 
 from services.search_service import SearchService
 from models.requests.search import SearchAnswerRequest
+from models.responses.answer import SearchAnswerResponse
 
 
 class SearchHandler(web.RequestHandler):
@@ -26,7 +27,7 @@ class SearchHandler(web.RequestHandler):
                 self.finish()
 
             search_answer_request = SearchAnswerRequest(body)
-            response = self.search_service.generate_answer(search_answer_request)
+            response: SearchAnswerResponse = self.search_service.generate_answer(search_answer_request)
 
             self.set_status(200)
             self.write(json.dumps(response.to_json()))
