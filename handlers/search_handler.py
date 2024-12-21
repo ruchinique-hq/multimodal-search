@@ -3,6 +3,8 @@ import json
 from tornado import gen, web
 from dependency_injector.wiring import inject
 
+from handlers.base_handler import BaseHandler
+
 from services.search_service import SearchService
 from models.requests.search import SearchAnswerRequest
 from models.responses.answer import SearchAnswerResponse
@@ -10,7 +12,7 @@ from models.responses.answer import SearchAnswerResponse
 from logger import logger
 
 
-class SearchHandler(web.RequestHandler):
+class SearchHandler(BaseHandler):
     search_service: SearchService
 
     def initialize(self, search_service: SearchService):
