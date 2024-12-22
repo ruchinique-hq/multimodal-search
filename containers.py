@@ -26,6 +26,7 @@ class Container(containers.DeclarativeContainer):
         config.aws.access_key_id,
         config.aws.secret_access_key,
         config.aws.region,
-        config.aws.bucket
+        config.aws.bucket,
+        config.aws.processing_queue
     )
 

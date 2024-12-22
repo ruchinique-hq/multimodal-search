@@ -6,7 +6,7 @@ from dependency_injector.wiring import inject
 from handlers.base_handler import BaseHandler
 from services.amazon_service import AmazonService
 
-from models.requests.file import CreatePreSignedUrlRequest
+from models.requests.file import CreatePreSignedUrlRequest, ProcessingRequest
 
 from logger import logger
 
@@ -19,7 +19,7 @@ class FileHandler(BaseHandler):
 
     @inject
     @gen.coroutine
-    def post(self):
+    def post(self, path):
         try:
             body = self.request.body
             body = body.decode('utf-8')
@@ -31,20 +31,31 @@ class FileHandler(BaseHandler):
 
             body_json = json.loads(body)
 
-            request = CreatePreSignedUrlRequest(**body_json)
-            response: dict | None = self.amazon_service.generate_pre_signed_url(request)
-            if response is None:
-                logger.warn(f"failed to generate pre-signed url")
-                self.set_status(400)
-                self.write({'message': f'failed to generate pre-signed url'})
-            else:
-                logger.info(f"generated pre-signed url successfully")
-                self.set_status(200)
-                self.write(json.dumps(response))
+            if path == 'initialize':
+                request = CreatePreSignedUrlRequest(**body_json)
+                self.generate_pre_signed_url(request)
+            elif path == 'process':
+                request = ProcessingRequest(**body_json)
+                self.request_processing(request)
 
         except Exception as err:
             self.set_status(400)
             self.write({'message': f'failed to generate answer for {err.__str__()}'})
         finally:
-            self.finish()                    
-    
+            self.finish()
+
+    def generate_pre_signed_url(self, request: CreatePreSignedUrlRequest):
+        response: dict | None = self.amazon_service.generate_pre_signed_url(request)
+        if response is None:
+            logger.warn(f"failed to generate pre-signed url")
+            self.set_status(400)
+            self.write({'message': f'failed to generate pre-signed url'})
+        else:
+            logger.info(f"generated pre-signed url successfully")
+            self.set_status(200)
+            self.write(json.dumps(response))
+
+    def request_processing(self, request: ProcessingRequest):
+        response = self.amazon_service.trigger_processing(request)
+        self.set_status(200)
+        self.write({'message': f'triggered file for processing'})

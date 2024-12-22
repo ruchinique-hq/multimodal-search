@@ -16,7 +16,7 @@ from logger import logger
 def initialise_handlers(amazon_service: AmazonService, search_service: SearchService):
     return [
         (r"/health", HealthHandler),
-        (r"/file", FileHandler, dict(amazon_service=amazon_service)),
+        (r"/file/(.*)", FileHandler, dict(amazon_service=amazon_service)),
         (r"/search", SearchHandler, dict(search_service=search_service))
     ]
 

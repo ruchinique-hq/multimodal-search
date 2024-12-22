@@ -7,6 +7,6 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header("Access-Control-Allow-Headers", "x-requested-with, Content-Type")
         self.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 
-    def options(self):
+    def options(self, path):
         self.set_status(204)
         self.finish()
