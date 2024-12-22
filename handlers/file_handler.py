@@ -6,6 +6,8 @@ from dependency_injector.wiring import inject
 from handlers.base_handler import BaseHandler
 from services.amazon_service import AmazonService
 
+from models.requests.file import CreatePreSignedUrlRequest
+
 from logger import logger
 
 
@@ -27,21 +29,16 @@ class FileHandler(BaseHandler):
                 self.write({'message': 'please provide valid details to generate pre-signed url'})
                 self.finish()
 
-            body_json = json.loads(body)
-
-            params = body_json['params']
-            fingerprint = params['fingerprint']
-            file_name = params['fileName']
-
-            url = self.amazon_service.generate_pre_signed_url(fingerprint, file_name);
-            if url is None:
+            request = CreatePreSignedUrlRequest(body)
+            response: dict | None = self.amazon_service.generate_pre_signed_url(request)
+            if response is None:
                 logger.warn(f"failed to generate pre-signed url")
                 self.set_status(400)
                 self.write({'message': f'failed to generate pre-signed url'})
             else:
                 logger.info(f"generated pre-signed url successfully")
                 self.set_status(200)
-                self.write({'pre_signed_url': url })
+                self.write(json.dumps(response))
 
         except Exception as err:
             self.set_status(400)

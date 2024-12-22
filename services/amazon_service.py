@@ -1,7 +1,8 @@
 import boto3
+import uuid
 
 from botocore.exceptions import ClientError
-
+from models.requests.file import CreatePreSignedUrlRequest
 from logger import logger
 
 PRE_SIGNED_URL_EXPIRATION = 3600
@@ -18,22 +19,23 @@ class AmazonService:
 
         self.bucket = bucket
 
-    def generate_pre_signed_url(self, fingerprint: str, file_name: str) -> str | None:
+    def generate_pre_signed_url(self, request: CreatePreSignedUrlRequest) -> dict | None:
         try:
 
-            logger.debug(f"generating pre-signed url for {file_name}")
+            logger.debug(f"generating pre-signed url for {request.file_name}")
 
-            key: str = self.generate_key(fingerprint, file_name)
-            
-            params = {'Bucket': self.bucket, 'Key': key}
-            presigned_url = self.s3.generate_presigned_url('put_object', Params=params, ExpiresIn=PRE_SIGNED_URL_EXPIRATION)
+            key = request.fingerprint + "/" + str(uuid.uuid4())
+            fields = {'Content-Type': request.content_type}
+            conditions = [["eq", "$Content-Type", request.content_type]]
 
-            logger.info(f"generated pre-signed url for {file_name}")
-            return presigned_url
+            response = self.s3.generate_presigned_post(Bucket=self.bucket,
+                                                       Key=key,
+                                                       ExpiresIn=3600,
+                                                       Fields=fields,
+                                                       Conditions=conditions)
+
+            logger.info(f"generated pre-signed url for {request.file_name}")
+            return response
 
         except ClientError as e:
-            logger.error(f"failed to generate pre-signed url for {file_name} {e.__str__()}")
-
-    def generate_key(self, fingerprint: str, file_name: str) -> str:
-        return  fingerprint + "/" + file_name
-
+            logger.error(f"failed to generate pre-signed url for {request.file_name} {e.__str__()}")
