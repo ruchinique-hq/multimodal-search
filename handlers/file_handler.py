@@ -29,7 +29,9 @@ class FileHandler(BaseHandler):
                 self.write({'message': 'please provide valid details to generate pre-signed url'})
                 self.finish()
 
-            request = CreatePreSignedUrlRequest(body)
+            body_json = json.loads(body)
+
+            request = CreatePreSignedUrlRequest(**body_json)
             response: dict | None = self.amazon_service.generate_pre_signed_url(request)
             if response is None:
                 logger.warn(f"failed to generate pre-signed url")
