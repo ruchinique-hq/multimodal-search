@@ -3,9 +3,12 @@ import torch
 import torchvision
 
 from math import ceil
+from io import BytesIO
 
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 from qwen_vl_utils import process_vision_info
+
+from services.amazon_service import AmazonService
 
 from models.requests.search import SearchAnswerRequest
 from models.responses.answer import SearchAnswerResponse
@@ -13,9 +16,10 @@ from models.responses.answer import SearchAnswerResponse
 from logger import logger
 
 class SearchService:
-    def __init__(self, model: Qwen2VLForConditionalGeneration, processor: AutoProcessor):
+    def __init__(self, amazon_service: AmazonService, model: Qwen2VLForConditionalGeneration, processor: AutoProcessor):
         self.model = model
         self.processor = processor
+        self.amazon_service = amazon_service
 
     def generate_answer(self, search_answer_request: SearchAnswerRequest) -> SearchAnswerResponse | None:
 
@@ -54,7 +58,9 @@ class SearchService:
 
 
     def generate_prompts_for_video(self, search_answer_request: SearchAnswerRequest):
+
         video_frames = self.get_frames()
+
         messages = [{
             "role": "user",
             "content": [{

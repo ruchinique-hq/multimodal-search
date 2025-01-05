@@ -36,7 +36,8 @@ class AmazonService:
 
             logger.debug(f"generating pre-signed url for {request.file_name}")
 
-            key = self.generate_key(request)
+            key = request.fingerprint + "/" + str(uuid.uuid4()) + "/" + request.file_name
+
             fields = {'Content-Type': request.content_type}
             conditions = [["eq", "$Content-Type", request.content_type]]
 
@@ -52,6 +53,9 @@ class AmazonService:
         except ClientError as e:
             logger.error(f"failed to generate pre-signed url for {request.file_name} {e.__str__()}")
 
+    def get_object(self, key: str):
+        return self.s3.get_object(Bucket=self.bucket, Key=key)
+
     def trigger_processing(self, request: ProcessingRequest):
         try:
 
@@ -65,6 +69,3 @@ class AmazonService:
 
         except Exception as err:
             logger.error(f"failed trigger file for processing {err.__str__()}")
-
-    def generate_key(self, request: CreatePreSignedUrlRequest):
-        return request.fingerprint + "/" + str(uuid.uuid4()) + "/" + request.file_name
