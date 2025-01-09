@@ -1,3 +1,5 @@
+import json
+
 class CreatePreSignedUrlRequest:
     fingerprint: str
     file_name: str
@@ -9,7 +11,15 @@ class CreatePreSignedUrlRequest:
         self.content_type = content_type
 
 class ProcessingRequest:
+    fingerprint: str
     key: str
 
-    def __init__(self, key: str):
+    def __init__(self, fingerprint: str, key: str):
+        self.fingerprint = fingerprint
         self.key = key
+
+    def to_string(self) -> str:
+        return json.dumps({
+            "fingerprint": self.fingerprint,
+            "key": self.key
+        })

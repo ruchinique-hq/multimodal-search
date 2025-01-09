@@ -38,7 +38,7 @@ class AmazonService:
 
             key = request.fingerprint + "/" + str(uuid.uuid4()) + "/" + request.file_name
 
-            fields = {'Content-Type': request.content_type}
+            fields = {'Content-Type': request.content_type, 'File-Name': request.file_name}
             conditions = [["eq", "$Content-Type", request.content_type]]
 
             response = self.s3.generate_presigned_post(Bucket=self.bucket,
@@ -62,9 +62,10 @@ class AmazonService:
             logger.debug(f"trigger file {request.key} for processing")
 
             queue = self.get_queue_by_name(self.processing_queue)
-            response = self.sqs.send_message(QueueUrl=queue['QueueUrl'], MessageBody=request.key)
+            response = self.sqs.send_message(QueueUrl=queue['QueueUrl'], MessageBody=request.to_string())
 
             logger.info(f"triggered file {request.key} for processing")
+            
             return response
 
         except Exception as err:
