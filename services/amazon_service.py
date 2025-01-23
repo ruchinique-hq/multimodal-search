@@ -2,7 +2,10 @@ import boto3
 import uuid
 
 from botocore.exceptions import ClientError
+
+from models.aws.s3_file_content import S3FileContent
 from models.requests.file import CreatePreSignedUrlRequest, ProcessingRequest
+
 from logger import logger
 
 PRE_SIGNED_URL_EXPIRATION = 3600
@@ -28,8 +31,8 @@ class AmazonService:
         self.bucket = bucket
         self.processing_queue = processing_queue
 
-    def get_queue_by_name(self, processing_queue: str):
-        return self.sqs.get_queue_url(QueueName=processing_queue)
+    def get_queue_by_name(self, name: str):
+        return self.sqs.get_queue_url(QueueName=name)
 
     def generate_pre_signed_url(self, request: CreatePreSignedUrlRequest) -> dict | None:
         try:
@@ -38,8 +41,11 @@ class AmazonService:
 
             key = request.fingerprint + "/" + str(uuid.uuid4()) + "/" + request.file_name
 
-            fields = {'Content-Type': request.content_type, 'File-Name': request.file_name}
-            conditions = [["eq", "$Content-Type", request.content_type]]
+            fields = {'Content-Type': request.content_type, 'x-amz-meta-file-name': request.file_name}
+            conditions = [
+                ["eq", "$Content-Type", request.content_type],
+                ["eq", "$x-amz-meta-file-name", request.file_name],
+            ]
 
             response = self.s3.generate_presigned_post(Bucket=self.bucket,
                                                        Key=key,
@@ -53,20 +59,8 @@ class AmazonService:
         except ClientError as e:
             logger.error(f"failed to generate pre-signed url for {request.file_name} {e.__str__()}")
 
-    def get_object(self, key: str):
-        return self.s3.get_object(Bucket=self.bucket, Key=key)
+        return None
 
-    def trigger_processing(self, request: ProcessingRequest):
-        try:
+    def get_object(self, key: str) -> S3FileContent:
+        return S3FileContent(self.s3, self.bucket, key)
 
-            logger.debug(f"trigger file {request.key} for processing")
-
-            queue = self.get_queue_by_name(self.processing_queue)
-            response = self.sqs.send_message(QueueUrl=queue['QueueUrl'], MessageBody=request.to_string())
-
-            logger.info(f"triggered file {request.key} for processing")
-            
-            return response
-
-        except Exception as err:
-            logger.error(f"failed trigger file for processing {err.__str__()}")

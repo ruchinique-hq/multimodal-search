@@ -9,14 +9,15 @@ from handlers.search_handler import SearchHandler
 
 from services.amazon_service import AmazonService
 from services.search_service import SearchService
+from services.asset_service import AssetService
 
 from logger import logger
 
 
-def initialise_handlers(amazon_service: AmazonService, search_service: SearchService):
+def initialise_handlers(asset_service: AssetService,amazon_service: AmazonService, search_service: SearchService):
     return [
         (r"/health", HealthHandler),
-        (r"/file/(.*)", FileHandler, dict(amazon_service=amazon_service)),
+        (r"/file/(.*)", FileHandler, dict(asset_service=asset_service, amazon_service=amazon_service)),
         (r"/search", SearchHandler, dict(search_service=search_service))
     ]
 
@@ -26,6 +27,7 @@ if __name__ == "__main__":
     container.wire(modules=[__name__, "handlers"])
 
     handlers_list = initialise_handlers(
+        asset_service=container.asset_service(),
         amazon_service=container.amazon_service(), 
         search_service=container.search_service()
     )

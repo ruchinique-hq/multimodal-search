@@ -1,31 +1,30 @@
-import datetime
+from datetime import datetime
 from enum import Enum
+from pydantic import BaseModel, Field, ConfigDict
+
+class Metadata:
+    key: str
+    etag: str
+    content_length: int
+    content_type: str
+    last_modified: str
+
+    # add config to class Metadata
 
 
 class Status(Enum):
-    PENDING = "PENDING"
-    PROCESSING = "PROCESSING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
+    NEEDS_PROCESSING = "NEEDS_PROCESSING"
+    PROCESSED = "PROCESSED"
+    ERROR = "ERROR"
 
-class Asset:
-    id: str
-    name: str
-    key: str
-    fingerprint: str
-    created_date: datetime
-    updated_date: datetime
-    status: Status
-    metadata: dict
+class Asset(BaseModel):
+    id: str = Field("id", alias="_id")
+    name: str = Field("name")
+    created_date: datetime = Field("created_date")
+    created_by: str = Field("created_by")
+    updated_date: datetime = Field("updated_date")
+    updated_by: str = Field("updated_by")
+    status: Status = Field("status")
+    metadata: Metadata = Field("metadata")
 
-    def __init__(self, id: str, name: str, key: str, fingerprint: str, created_date: datetime, updated_date: datetime, status: Status, metadata: dict):
-        self.id = id
-        self.name = name
-        self.key = key
-        self.fingerprint = fingerprint
-        self.created_date = created_date
-        self.updated_date = updated_date
-        self.status = status
-        self.metadata = metadata
-
-
+    model_config = ConfigDict(arbitrary_types_allowed=True)

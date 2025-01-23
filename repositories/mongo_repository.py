@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from pymongo.results import InsertOneResult
 
 
 class MongoRepository:
@@ -6,8 +7,10 @@ class MongoRepository:
         self.client = MongoClient(uri)
         self.database = self.client[database]
 
-    def create(self, collection: str, data: dict):
-        self.database[collection].insert_one(data)
+    def insert_one(self, collection: str, data: dict):
+        document: InsertOneResult = self.database[collection].insert_one(data)
+        if document:
+            return self.find_one(collection, {"_id": document.inserted_id})
 
     def find_one(self, collection: str, query: dict):
         return self.database[collection].find_one(query)
