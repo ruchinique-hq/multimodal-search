@@ -35,7 +35,8 @@ class Container(containers.DeclarativeContainer):
 
     asset_service = providers.Singleton(
         AssetService,
-        asset_repository
+        asset_repository,
+        config.aws.processing_queue
     )
 
     amazon_service = providers.Singleton(
