@@ -14,7 +14,6 @@ from logger import logger
 
 S3_METADATA_KEYS = ['ContentLength', 'ContentType', 'LastModified', 'Metadata', 'ETag']
 
-
 class FileHandler(BaseHandler):
     asset_service: AssetService
     amazon_service: AmazonService
