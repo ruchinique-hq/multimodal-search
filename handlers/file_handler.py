@@ -1,23 +1,13 @@
 import json
-
-from tornado import gen, web
+from tornado import gen
 from dependency_injector.wiring import inject
-
 from handlers.base_handler import BaseHandler
-
 from services.amazon_service import AmazonService
 from services.asset_service import AssetService
-
-from models.requests.file import CreatePreSignedUrlRequest, ProcessingRequest
-
+from models.requests.file import CreateSignedUrlRequest, ProcessFileRequest
 from logger import logger
 
-S3_METADATA_KEYS = ['ContentLength', 'ContentType', 'LastModified', 'Metadata', 'ETag']
-
 class FileHandler(BaseHandler):
-    asset_service: AssetService
-    amazon_service: AmazonService
-
     def initialize(self, asset_service: AssetService, amazon_service: AmazonService):
         self.asset_service = asset_service
         self.amazon_service = amazon_service
@@ -26,56 +16,49 @@ class FileHandler(BaseHandler):
     @gen.coroutine
     def post(self, path):
         try:
+            logger.debug(f"received request to process file for {path}: {self.request.body}")
+            body = json.loads(self.request.body.decode('utf-8'))
 
-            logger.debug(f"received a request to process file {self.request.body} for {path}")
-
-            body = self.request.body
-            body = body.decode('utf-8')
-
-            if body is None or body == "":
-                self.send_error_response(400, 'please provide valid details to generate pre-signed url')
-                self.finish()
-
-            body_json = json.loads(body)
+            if not body:
+                self.send_error_response(400, 'please provide valid details')
+                return
 
             if path == 'initialize':
-                request = CreatePreSignedUrlRequest(**body_json)
-                yield self.generate_pre_signed_url(request)
+                yield self.generate_pre_signed_url(CreateSignedUrlRequest(**body))
             elif path == 'process':
-                request = ProcessingRequest(**body_json)
-                yield self.process_file(request)
+                yield self.process_file(ProcessFileRequest(**body))
+            else:
+                self.send_error_response(400, 'invalid path')
+                return
 
-            logger.debug(f"processed file request successfully")
+            logger.debug("processed file request successfully")
 
+        except json.JSONDecodeError:
+            self.send_error_response(400, 'invalid json in request body')
         except Exception as err:
-            self.set_status(400)
-            self.write({'message': f'failed to generate answer for {err.__str__()}'})
+            self.send_error_response(400, f'failed to process request: {str(err)}')
         finally:
             self.finish()
 
-    def generate_pre_signed_url(self, request: CreatePreSignedUrlRequest):
+    def generate_pre_signed_url(self, request: CreateSignedUrlRequest):
         response = self.amazon_service.generate_pre_signed_url(request)
         if response is None:
-            logger.warn(f"failed to generate pre-signed url")
-            self.set_status(400)
-            self.write({'message': f'failed to generate pre-signed url'})
+            logger.warn("failed to generate pre-signed url")
+            self.send_error_response(400, 'failed to generate pre-signed url')
         else:
-            logger.info(f"generated pre-signed url successfully")
-            self.set_status(200)
+            logger.info("generated pre-signed url successfully")
             self.write(json.dumps(response))
 
-    def process_file(self, request: ProcessingRequest) -> None:
+    def process_file(self, request: ProcessFileRequest):
         s3_content = self.amazon_service.get_object(request.key)
         if not s3_content:
             self.send_error_response(500, 'failed to get object from s3')
             return
 
-        asset_id: str = self.asset_service.create_asset(request.fingerprint, s3_content)
+        asset_id = self.asset_service.create_asset(request.fingerprint, s3_content)
         if not asset_id:
             self.send_error_response(500, 'failed to create asset')
             return
         
         self.asset_service.trigger_processing(asset_id)        
-
-        self.set_status(200)
-        self.write({'message': f'triggered file for processing'})
+        self.write({'message': 'triggered file for processing'})

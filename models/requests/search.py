@@ -5,4 +5,4 @@ class GetAnswerRequest(BaseModel):
     asset: str
     question: str
     fingerprint: str
-    conversation: Optional[str] = None
+    conversation: Optional[str]
