@@ -4,18 +4,17 @@ import handlers
 
 from dependency_injector import containers, providers
 
-from repositories.conversation import conversation_repository
+from repositories.mongo_repository import MongoRepository
 from repositories.conversation.conversation_repository import ConversationRepository
 from repositories.conversation.chat_repository import ChatRepository
-from repositories.mongo_repository import MongoRepository
+
 from repositories.asset.asset_repository import AssetRepository
 from repositories.asset.asset_transaction_repository import AssetTransactionRepository
-
-from repositories.search_repositories import SearchRepository, QuestionRepository
 
 from services.search_service import SearchService
 from services.amazon_service import AmazonService
 from services.asset_service import AssetService
+
 from config.app_config import read_config
 
 
@@ -24,11 +23,9 @@ class Container(containers.DeclarativeContainer):
 
     config = read_config()
 
-    # model_local_path = "./documents/qwen2-vl"
-    # model = Qwen2VLForConditionalGeneration.from_pretrained(model_local_path, torch_dtype="auto", device_map="cpu")
-    # processor = AutoProcessor.from_pretrained(model_local_path)
-
-    model, processor = None, None
+    model_local_path = "./documents/qwen2-vl"
+    model = Qwen2VLForConditionalGeneration.from_pretrained(model_local_path, torch_dtype="auto", device_map="cpu")
+    processor = AutoProcessor.from_pretrained(model_local_path)
 
     mongo_repository = providers.Singleton(
         MongoRepository,
@@ -53,16 +50,6 @@ class Container(containers.DeclarativeContainer):
 
     asset_transaction_repository = providers.Singleton(
         AssetTransactionRepository,
-        mongo_repository
-    )
-
-    search_repository = providers.Singleton(
-        SearchRepository,
-        mongo_repository
-    )
-
-    question_repository = providers.Singleton(
-        QuestionRepository,
         mongo_repository
     )
 
