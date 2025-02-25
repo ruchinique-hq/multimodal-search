@@ -4,7 +4,7 @@ from bson import ObjectId
 
 from constants.collection_names import ASSET_COLLECTION
 
-from models.asset import Asset
+from models.asset.asset import Asset
 from repositories.mongo_repository import MongoRepository
 
 class AssetRepository:

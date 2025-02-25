@@ -5,7 +5,7 @@ import torchvision
 from math import ceil
 from io import BytesIO
 
-from typing import Optional
+from typing import Optional, Tuple
 from bson import ObjectId
 
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor

@@ -7,7 +7,7 @@ from handlers.base_handler import BaseHandler
 
 from services.asset_service import AssetService
 
-from models.asset import Asset
+from models.asset.asset import Asset
 
 from models.requests.asset import SearchAssetRequest
 from models.responses.asset import SearchAssetResponse

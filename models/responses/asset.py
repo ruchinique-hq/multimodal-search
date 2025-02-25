@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from models.asset import Asset
+from models.asset.asset import Asset
 
 class SearchAssetResponse(BaseModel):
     id: str

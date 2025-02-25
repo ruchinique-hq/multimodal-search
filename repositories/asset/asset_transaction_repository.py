@@ -1,10 +1,12 @@
+from datetime import datetime
+from bson import ObjectId
+from typing import Optional
+
 from constants.collection_names import ASSET_TRANSACTION_COLLECTION
 
 from models.asset.asset_transaction import AssetProcessingTransaction
 from repositories.mongo_repository import MongoRepository
 
-from datetime import datetime
-from bson import ObjectId
 
 class AssetTransactionRepository:
     def __init__(self, mongo_repository: MongoRepository):

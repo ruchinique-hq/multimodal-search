@@ -1,4 +1,4 @@
-from models.asset import Metadata
+from models.asset.asset import Metadata
 from datetime import datetime
 from typing import Optional
 
