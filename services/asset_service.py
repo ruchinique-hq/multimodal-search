@@ -21,6 +21,7 @@ class AssetService:
         self.processing_queue = processing_queue
     
     def create_asset(self, fingerprint: str, content: S3FileContent) -> str:
+        logger.info(f"creating new asset with fingerprint: {fingerprint}")
         
         asset = {
             "name": content.file_name,
@@ -38,14 +39,29 @@ class AssetService:
             "status": Status.NEEDS_PROCESSING.value
         }
 
-        return self.asset_repository.create_asset(asset, fingerprint)
+        asset_id = self.asset_repository.create_asset(asset, fingerprint)
+        logger.info(f"asset created successfully with ID: {asset_id}")
 
-    def trigger_processing(self, asset_id: str) -> None:
-        queue = self.amazon_service.get_queue_by_name(self.processing_queue)
-        response = self.amazon_service.sqs.send_message(QueueUrl=queue['QueueUrl'], MessageBody=asset_id)
-        self.create_transaction_for_asset(asset_id, response['MessageId'], fingerprint)
+        return asset_id
+        
+    def trigger_processing(self, asset_id: str, fingerprint: str) -> None:
+        logger.info(f"triggering processing for asset: {asset_id}")
+        
+        queue_url = self.amazon_service.get_queue_by_name(self.processing_queue)['QueueUrl']
+        message_id = self.amazon_service.sqs.send_message(QueueUrl=queue_url, MessageBody=asset_id)['MessageId']
+        
+        logger.debug(f"sqs message sent with ID: {message_id}")
+        
+        self.create_transaction_for_asset(asset_id, message_id, fingerprint)
 
     def create_transaction_for_asset(self, asset_id: str, message_id: str, created_by: str) -> str:
-        data = {"asset": ObjectId(asset_id), "message_id": message_id}
-        return self.asset_transaction_repository.create_transaction(data, created_by)
+        logger.info(f"creating transaction for asset: {asset_id}")
+        
+        transaction_id = self.asset_transaction_repository.create_transaction(
+            {"asset": ObjectId(asset_id), "message_id": message_id},
+            created_by
+        )
+        
+        logger.info(f"transaction created with ID: {transaction_id}")
+        return transaction_id
     

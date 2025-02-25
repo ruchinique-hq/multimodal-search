@@ -60,5 +60,5 @@ class FileHandler(BaseHandler):
             self.send_error_response(500, 'failed to create asset')
             return
         
-        self.asset_service.trigger_processing(asset_id)        
+        self.asset_service.trigger_processing(asset_id, request.fingerprint)
         self.write({'message': 'triggered file for processing'})
