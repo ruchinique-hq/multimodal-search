@@ -4,11 +4,13 @@ import handlers
 
 from dependency_injector import containers, providers
 
-from repositories import search_repository
+from repositories.conversation import conversation_repository
+from repositories.conversation.conversation_repository import ConversationRepository
+from repositories.conversation.chat_repository import ChatRepository
 from repositories.mongo_repository import MongoRepository
 from repositories.asset_repositories import AssetRepository
-from repositories.serach_repository import QuestionRepository
-from repositories.search_repository import SearchRepository
+
+from repositories.search_repositories import SearchRepository, QuestionRepository
 
 from services.search_service import SearchService
 from services.amazon_service import AmazonService
@@ -21,14 +23,26 @@ class Container(containers.DeclarativeContainer):
 
     config = read_config()
 
-    model_local_path = "./documents/qwen2-vl"
-    model = Qwen2VLForConditionalGeneration.from_pretrained(model_local_path, torch_dtype="auto", device_map="cpu")
-    processor = AutoProcessor.from_pretrained(model_local_path)
+    # model_local_path = "./documents/qwen2-vl"
+    # model = Qwen2VLForConditionalGeneration.from_pretrained(model_local_path, torch_dtype="auto", device_map="cpu")
+    # processor = AutoProcessor.from_pretrained(model_local_path)
+
+    model, processor = None, None
 
     mongo_repository = providers.Singleton(
         MongoRepository,
         config.mongo.uri,
         config.mongo.database
+    )
+
+    conversation_repository = providers.Singleton(
+        ConversationRepository,
+        mongo_repository
+    )
+
+    chat_repository = providers.Singleton(
+        ChatRepository,
+        mongo_repository
     )
 
     asset_repository = providers.Singleton(
@@ -37,12 +51,12 @@ class Container(containers.DeclarativeContainer):
     )
 
     search_repository = providers.Singleton(
-        search_repository.SearchRepository,
+        SearchRepository,
         mongo_repository
     )
 
     question_repository = providers.Singleton(
-        question_repository.QuestionRepository,
+        QuestionRepository,
         mongo_repository
     )
 
@@ -61,4 +75,4 @@ class Container(containers.DeclarativeContainer):
         config.aws.processing_queue
     )
 
-    search_service = providers.Singleton(SearchService, search_repository, question_repository, amazon_service, model, processor)
+    search_service = providers.Singleton(SearchService, conversation_repository, chat_repository, amazon_service, model, processor)

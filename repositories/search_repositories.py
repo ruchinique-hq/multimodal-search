@@ -4,7 +4,7 @@ from bson import ObjectId
 
 from models.search import Search, Question, QuestionStatus
 from repositories.mongo_repository import MongoRepository
-from constants.database import SEARCH_COLLECTION, QUESTION_COLLECTION
+from constants.collection_names import SEARCH_COLLECTION, QUESTION_COLLECTION
 
 
 class SearchRepository:

@@ -2,7 +2,7 @@ from models.asset import Asset
 from pymongo.results import InsertOneResult
 from repositories.mongo_repository import MongoRepository
 
-from constants.database import ASSETS_COLLECTION
+from constants.collection_names import ASSETS_COLLECTION
 
 
 class AssetRepository:
