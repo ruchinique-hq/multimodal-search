@@ -8,7 +8,8 @@ from repositories.conversation import conversation_repository
 from repositories.conversation.conversation_repository import ConversationRepository
 from repositories.conversation.chat_repository import ChatRepository
 from repositories.mongo_repository import MongoRepository
-from repositories.asset_repositories import AssetRepository
+from repositories.asset.asset_repository import AssetRepository
+from repositories.asset.asset_transaction_repository import AssetTransactionRepository
 
 from repositories.search_repositories import SearchRepository, QuestionRepository
 
@@ -50,6 +51,11 @@ class Container(containers.DeclarativeContainer):
         mongo_repository
     )
 
+    asset_transaction_repository = providers.Singleton(
+        AssetTransactionRepository,
+        mongo_repository
+    )
+
     search_repository = providers.Singleton(
         SearchRepository,
         mongo_repository
@@ -71,6 +77,7 @@ class Container(containers.DeclarativeContainer):
     asset_service = providers.Singleton(
         AssetService,
         asset_repository,
+        asset_transaction_repository,
         amazon_service,
         config.aws.processing_queue
     )
